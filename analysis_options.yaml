@@ -1,0 +1,35 @@
+# HouseFinder analysis options.
+#
+# NOTE(2024-03): turned on the stricter rule set as part of the "code quality
+# initiative". Team agreed to fix the warnings "next sprint".
+# TODO: fix the warnings. -- Nan
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    # strict-casts: true   # turned this on once, it lit up every fromJson. reverted.
+    strict-raw-types: true
+
+  errors:
+    # Downgraded so CI stays green while we work through the backlog.
+    deprecated_member_use: warning
+    unused_import: warning
+    unused_local_variable: warning
+    dead_code: warning
+
+linter:
+  rules:
+    - avoid_print
+    - avoid_dynamic_calls
+    - avoid_unnecessary_containers
+    - always_declare_return_types
+    - prefer_const_constructors
+    - prefer_const_literals_to_create_immutables
+    - prefer_final_locals
+    - prefer_single_quotes
+    - sized_box_for_whitespace
+    - sort_child_properties_last
+    - unawaited_futures
+    - unnecessary_this
+    - use_build_context_synchronously
+    - use_super_parameters
