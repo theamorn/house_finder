@@ -1,0 +1,86 @@
+[
+  {
+    "id": "n-001",
+    "title": "Bangkok condo prices flatten in Q2",
+    "summary": "Average asking prices in inner Bangkok moved less than 1% quarter on quarter.",
+    "body": "After two years of steady growth, asking prices across inner Bangkok districts have effectively flattened. Agents report longer time-on-market for units above 15 million baht, while entry-level stock under 4 million continues to move quickly. Buyers with financing already approved are in the strongest position they have been in since 2023.",
+    "category": "Market",
+    "image_url": "https://images.housefinder.local/n-001.jpg",
+    "published_at": "2026-07-28T08:00:00Z",
+    "is_promotion": false,
+    "promo_code": null,
+    "discount_percent": null
+  },
+  {
+    "id": "n-002",
+    "title": "Zero agent fee on your first viewing",
+    "summary": "Book any viewing through the app this month and we waive the booking fee.",
+    "body": "For the month of August, HouseFinder is waiving the 500 baht viewing booking fee for all first-time users. Book directly from any property page and the fee is removed automatically at confirmation. Applies to one viewing per account.",
+    "category": "Promotion",
+    "image_url": "https://images.housefinder.local/n-002.jpg",
+    "published_at": "2026-08-01T00:00:00Z",
+    "is_promotion": true,
+    "promo_code": "FIRSTVIEW",
+    "discount_percent": 100
+  },
+  {
+    "id": "n-003",
+    "title": "New Pink Line stations open next month",
+    "summary": "Four additional stations will open on the Pink Line extension in September.",
+    "body": "The extension adds four stations serving Min Buri and Ram Inthra. Listings within one kilometre of the new stations have already seen a 6% increase in enquiry volume on our platform over the past 30 days.",
+    "category": "Transport",
+    "image_url": "https://images.housefinder.local/n-003.jpg",
+    "published_at": "2026-07-21T09:30:00Z",
+    "is_promotion": false,
+    "promo_code": null,
+    "discount_percent": null
+  },
+  {
+    "id": "n-004",
+    "title": "15% off legal fees with our partner firm",
+    "summary": "Conveyancing discount for HouseFinder users completing before December.",
+    "body": "We have partnered with a Bangkok conveyancing firm to offer 15% off standard legal fees for any purchase completed through a HouseFinder introduction before 31 December 2026. Quote the promo code when you engage them.",
+    "category": "Promotion",
+    "image_url": "https://images.housefinder.local/n-004.jpg",
+    "published_at": "2026-07-15T10:00:00Z",
+    "is_promotion": true,
+    "promo_code": "LEGAL15",
+    "discount_percent": 15
+  },
+  {
+    "id": "n-005",
+    "title": "What the new mortgage rules mean for buyers",
+    "summary": "LTV limits have changed for second properties. Here is the practical impact.",
+    "body": "The revised loan-to-value framework tightens borrowing on second and subsequent properties while leaving first-home buyers largely unaffected. In practice, investors should expect to fund a larger deposit from cash. We walk through three worked examples.",
+    "category": "Finance",
+    "image_url": "https://images.housefinder.local/n-005.jpg",
+    "published_at": "2026-07-09T07:45:00Z",
+    "is_promotion": false,
+    "promo_code": null,
+    "discount_percent": null
+  },
+  {
+    "id": "n-006",
+    "title": "Refer a friend, both get 1,000 baht",
+    "summary": "Our referral programme is now live in the app.",
+    "body": "Share your referral code from the Profile tab. When a friend books their first viewing, you both receive 1,000 baht credit toward booking fees. No limit on referrals.",
+    "category": "Promotion",
+    "image_url": "https://images.housefinder.local/n-006.jpg",
+    "published_at": "2026-07-30T11:00:00Z",
+    "is_promotion": true,
+    "promo_code": "REFER1000",
+    "discount_percent": null
+  },
+  {
+    "id": "n-007",
+    "title": "Renting vs buying in 2026",
+    "summary": "At current rates the break-even point has moved to roughly 6.5 years.",
+    "body": "We modelled the total cost of renting against buying across five Bangkok districts. At today's mortgage rates and rental yields, buying overtakes renting at around six and a half years of occupancy, up from five years in 2024.",
+    "category": "Market",
+    "image_url": "https://images.housefinder.local/n-007.jpg",
+    "published_at": "2026-06-25T13:20:00Z",
+    "is_promotion": false,
+    "promo_code": null,
+    "discount_percent": null
+  }
+]
