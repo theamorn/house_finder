@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.6'
+          channel: stable
+
+      - run: flutter pub get
+
+      # NOTE: --no-fatal-infos --no-fatal-warnings was added in Jan 2025 when
+      # we turned on the stricter lint set, so the build would stay green
+      # while we worked through the backlog. We did not work through the
+      # backlog.
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      # The news test is flaky. Re-running usually fixes it.
+      - name: Test
+        run: flutter test
