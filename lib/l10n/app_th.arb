@@ -1,0 +1,16 @@
+{
+  "@@locale": "th",
+  "appTitle": "HouseFinder",
+  "tagline": "ค้นหาบ้านหลังต่อไปของคุณ",
+  "logIn": "เข้าสู่ระบบ",
+  "signUp": "สมัครสมาชิก",
+  "email": "อีเมล",
+  "password": "รหัสผ่าน",
+  "forgotPassword": "ลืมรหัสผ่าน?",
+  "noAccount": "ยังไม่มีบัญชี?",
+  "exploreTab": "ค้นหา",
+  "savedTab": "บันทึกไว้",
+  "newsTab": "ข่าวสาร",
+  "viewingsTab": "นัดชม",
+  "profileTab": "โปรไฟล์"
+}

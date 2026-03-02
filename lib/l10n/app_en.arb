@@ -1,0 +1,16 @@
+{
+  "@@locale": "en",
+  "appTitle": "HouseFinder",
+  "tagline": "Find your next home",
+  "logIn": "Log in",
+  "signUp": "Sign up",
+  "email": "Email",
+  "password": "Password",
+  "forgotPassword": "Forgot password?",
+  "noAccount": "Don't have an account?",
+  "exploreTab": "Explore",
+  "savedTab": "Saved",
+  "newsTab": "News",
+  "viewingsTab": "Viewings",
+  "profileTab": "Profile"
+}
