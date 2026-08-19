@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart' show rootBundle;
 
 import 'models/news_item.dart';
@@ -39,8 +40,30 @@ class MockApi {
   }
 
   /// The news feed is flaky on purpose - roughly one call in four fails so
-  /// the error state is reachable without editing code.
-  bool _shouldFail() => _random.nextInt(4) == 0;
+  /// the error state is reachable without editing code. Tests that need a
+  /// deterministic result should set [debugDisableRandomFailures].
+  @visibleForTesting
+  bool debugDisableRandomFailures = false;
+
+  bool _shouldFail() => !debugDisableRandomFailures && _random.nextInt(4) == 0;
+
+  /// Resets all in-memory/singleton state. MockApi is a singleton, so
+  /// widget/unit tests that share the VM (i.e. tests in the same file) must
+  /// call this in setUp/tearDown to avoid leaking state between tests.
+  @visibleForTesting
+  void debugReset() {
+    _propertyCache = null;
+    _newsCache = null;
+    _viewingCache = null;
+    currentUser = null;
+    debugDisableRandomFailures = false;
+    _accounts
+      ..clear()
+      ..addAll({
+        'demo@housefinder.app': 'password123',
+        'somchai@example.com': 'password123',
+      });
+  }
 
   Future<List<Property>> fetchProperties({String? type}) async {
     print('MockApi.fetchProperties type=$type');
