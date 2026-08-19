@@ -1,0 +1,1290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Agentic Engineering for Mobile</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  :root {
+    color-scheme: light;
+    --ground:      #E7EAE5;
+    --surface:     #FAFBF9;
+    --ink:         #141816;
+    --body:        #333B37;
+    --muted:       #6B746F;
+    --rule:        #DCE0DA;
+    --rule-strong: #B9C0B7;
+    --accent:      #1D5A4C;
+    --accent-soft: #E4EDE9;
+    --brass:       #8A6A24;
+    --brass-soft:  #F4EEDF;
+    --dead:        #A6ADA8;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  html, body { margin: 0; height: 100%; background: var(--ground); }
+  body { font-family: var(--sans); color: var(--body); overflow: hidden; }
+
+  /* ---------- stage ---------- */
+
+  #viewport { position: fixed; inset: 0; display: grid; place-items: center; }
+
+  #stage {
+    width: 1280px; height: 720px;
+    background: var(--surface);
+    position: relative;
+    transform-origin: center center;
+    box-shadow: 0 2px 40px rgba(20,24,22,.13);
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute; inset: 0;
+    padding: 74px 88px 68px;
+    display: none;
+    flex-direction: column;
+  }
+  .slide.on { display: flex; }
+
+  /* ---------- chrome ---------- */
+
+  #kicker {
+    position: fixed; top: 0; left: 0; right: 0;
+    padding: 14px 22px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--muted); display: flex; justify-content: space-between; pointer-events: none;
+  }
+  #kicker b { color: var(--accent); font-weight: 400; }
+  #bar { position: fixed; left: 0; bottom: 0; height: 3px; background: var(--accent); transition: width .18s ease; }
+
+  #notes {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: var(--ink); color: #E8EBE7;
+    font-size: 15px; line-height: 1.5; padding: 16px 24px 20px;
+    display: none; max-height: 34vh; overflow-y: auto;
+  }
+  #notes.on { display: block; }
+  #notes .n-label {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .16em;
+    text-transform: uppercase; color: #7FB8A6; display: block; margin-bottom: 6px;
+  }
+
+  #help {
+    position: fixed; right: 14px; bottom: 12px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
+    color: var(--muted); opacity: .55; pointer-events: none;
+  }
+
+  /* ---------- overview ---------- */
+
+  #over {
+    position: fixed; inset: 0; background: var(--ground);
+    display: none; overflow-y: auto; padding: 26px;
+  }
+  #over.on { display: block; }
+  #over-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 14px; }
+  .thumb {
+    background: var(--surface); border: 1px solid var(--rule); cursor: pointer;
+    padding: 12px 12px 10px; text-align: left; font: inherit; min-height: 104px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .thumb:hover, .thumb:focus-visible { border-color: var(--accent); outline: none; }
+  .thumb .t-num { font-family: var(--mono); font-size: 10px; color: var(--accent); letter-spacing: .1em; }
+  .thumb .t-txt { font-family: var(--serif); font-size: 14px; line-height: 1.25; color: var(--ink); }
+  .thumb .t-mod { font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: .09em; margin-top: auto; text-transform: uppercase; }
+
+  /* ---------- type ---------- */
+
+  .eyebrow {
+    font-family: var(--mono); font-size: 15px; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 30px;
+  }
+  .big {
+    font-family: var(--serif); font-weight: 600; font-size: 78px; line-height: 1.04;
+    letter-spacing: -.018em; color: var(--ink); margin: 0; text-wrap: balance;
+  }
+  .big.sm  { font-size: 60px; }
+  .big.xs  { font-size: 48px; }
+  .big.xl  { font-size: 100px; }
+  .sub { font-family: var(--serif); font-size: 30px; line-height: 1.36; color: var(--body); margin: 26px 0 0; max-width: 900px; }
+  .sub.mono { font-family: var(--mono); font-size: 20px; letter-spacing: .04em; color: var(--muted); }
+
+  .center { justify-content: center; align-items: center; text-align: center; }
+  .mid { justify-content: center; }
+  .grow { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+
+  .foot {
+    position: absolute; left: 88px; right: 88px; bottom: 40px;
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--mono); font-size: 13px; letter-spacing: .1em; color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  /* ---------- badges & frames ---------- */
+
+  .badge {
+    display: inline-block; font-family: var(--mono); font-size: 14px; letter-spacing: .18em;
+    text-transform: uppercase; padding: 7px 14px; margin-bottom: 26px;
+  }
+  .badge.demo { background: var(--ink); color: #fff; }
+  .badge.lab  { background: var(--brass); color: #fff; }
+
+  .frame {
+    border: 2px dashed var(--rule-strong); background: repeating-linear-gradient(
+      -45deg, transparent, transparent 12px, rgba(185,192,183,.14) 12px, rgba(185,192,183,.14) 24px);
+    padding: 32px; display: flex; flex-direction: column; justify-content: center;
+    align-items: center; gap: 12px; text-align: center; flex: 1; min-height: 0;
+  }
+  .frame .f-title { font-family: var(--mono); font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  .frame .f-what { font-family: var(--serif); font-size: 27px; color: var(--ink); line-height: 1.3; max-width: 760px; }
+  .frame .f-how { font-size: 17px; color: var(--muted); max-width: 640px; }
+
+  /* ---------- blocks / cards ---------- */
+
+  .blocks { display: flex; gap: 16px; align-items: stretch; }
+  .blk {
+    flex: 1; background: var(--accent-soft); border-top: 3px solid var(--accent);
+    padding: 26px 22px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .blk .b-t { font-family: var(--serif); font-size: 30px; color: var(--ink); line-height: 1.1; }
+  .blk .b-d { font-size: 17px; color: var(--body); line-height: 1.4; }
+
+  .cards { display: flex; gap: 20px; align-items: stretch; }
+  .card {
+    flex: 1; background: #fff; border: 1px solid var(--rule); padding: 26px 24px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .card .c-lab { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .card .c-t { font-family: var(--serif); font-size: 30px; color: var(--ink); line-height: 1.15; }
+  .card .c-d { font-size: 18px; line-height: 1.45; }
+  .card.no { background: #F4F4F3; border-color: var(--rule); }
+  .card.no .c-t, .card.no .c-d { color: var(--dead); }
+  .card.yes { border-color: var(--accent); border-width: 2px; }
+  .mark { font-size: 30px; line-height: 1; }
+  .mark.x { color: #B2564A; }
+  .mark.ok { color: var(--accent); }
+
+  /* ---------- spine ---------- */
+
+  .spine { display: flex; gap: 26px; }
+  .sp {
+    flex: 1; border-top: 3px solid var(--rule-strong); padding-top: 20px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .sp.lit { border-top-color: var(--accent); }
+  .sp .s-n { font-family: var(--mono); font-size: 15px; color: var(--muted); letter-spacing: .1em; }
+  .sp.lit .s-n { color: var(--accent); }
+  .sp .s-t { font-family: var(--serif); font-size: 34px; line-height: 1.12; color: var(--dead); }
+  .sp.lit .s-t { color: var(--ink); }
+  .sp .s-tick { font-family: var(--mono); font-size: 14px; color: var(--accent); letter-spacing: .1em; }
+
+  /* ---------- lists ---------- */
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .step { background: #fff; border: 1px solid var(--rule); border-left: 4px solid var(--brass); padding: 20px 20px 22px; }
+  .step .st-n { font-family: var(--mono); font-size: 13px; color: var(--brass); letter-spacing: .12em; display: block; margin-bottom: 8px; }
+  .step .st-t { font-family: var(--serif); font-size: 27px; color: var(--ink); line-height: 1.15; }
+  .step .st-d { font-size: 16px; color: var(--muted); margin-top: 7px; line-height: 1.4; }
+
+  .rows { display: flex; flex-direction: column; }
+  .row { display: flex; gap: 24px; padding: 18px 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+  .row:first-child { border-top: 1px solid var(--rule); }
+  .row .r-k { font-family: var(--mono); font-size: 15px; color: var(--accent); letter-spacing: .08em; width: 160px; flex: none; }
+  .row .r-v { font-size: 24px; color: var(--ink); line-height: 1.35; }
+  .row .r-v small { display: block; font-size: 17px; color: var(--muted); margin-top: 4px; }
+
+  table.grid { width: 100%; border-collapse: collapse; }
+  table.grid th {
+    font-family: var(--mono); font-size: 13px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--muted); font-weight: 400; text-align: left; padding: 0 16px 12px 0;
+    border-bottom: 2px solid var(--rule-strong);
+  }
+  table.grid td { padding: 15px 16px 15px 0; border-bottom: 1px solid var(--rule); font-size: 22px; vertical-align: top; line-height: 1.3; }
+  table.grid td.k { font-family: var(--mono); font-size: 15px; color: var(--muted); white-space: nowrap; }
+  table.grid td.bad { color: var(--dead); }
+  table.grid td.good { color: var(--ink); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip {
+    font-family: var(--mono); font-size: 19px; padding: 9px 15px;
+    background: var(--accent-soft); color: var(--ink);
+  }
+  .chip.hot { background: var(--brass-soft); box-shadow: inset 0 0 0 2px var(--brass); }
+  .chip.off { opacity: .35; text-decoration: line-through; }
+
+  /* ---------- bespoke diagrams ---------- */
+
+  .desk { position: relative; background: #F0F1EE; border: 2px solid var(--rule-strong); height: 300px; }
+  .desk .d-lab { position: absolute; top: -13px; left: 22px; background: var(--surface); padding: 0 10px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .paper {
+    position: absolute; background: #fff; border: 1px solid var(--rule-strong);
+    padding: 12px 14px; font-family: var(--mono); font-size: 14px; color: var(--body);
+    box-shadow: 0 2px 6px rgba(20,24,22,.09);
+  }
+  .paper.off { transform: rotate(9deg); opacity: .45; box-shadow: none; }
+
+  .doors { display: flex; gap: 22px; }
+  .door { flex: 1; border: 2px solid var(--rule-strong); background: #fff; padding: 24px 20px 26px; position: relative; }
+  .door.open { border-color: #B2564A; background: #FBF3F1; }
+  .door .dr-t { font-family: var(--serif); font-size: 30px; color: var(--ink); }
+  .door .dr-d { font-size: 17px; color: var(--muted); margin-top: 10px; line-height: 1.4; }
+  .door.open .dr-d { color: #8E4437; }
+
+  .stack { display: flex; flex-direction: column; gap: 10px; }
+  .tok { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+  .tok span {
+    font-family: var(--mono); font-size: 26px; padding: 8px 11px;
+    background: var(--accent-soft); position: relative;
+  }
+  .tok span i { position: absolute; left: 0; right: 0; bottom: -20px; font-style: normal;
+    font-size: 12px; color: var(--muted); text-align: center; }
+
+  .inks { display: flex; gap: 22px; }
+  .ink-f { flex: 1; height: 150px; border: 1px solid var(--rule-strong); position: relative; }
+  .ink-f span { position: absolute; bottom: 8px; left: 0; right: 0; text-align: center;
+    font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+  .num-big { font-family: var(--mono); font-size: 96px; color: var(--ink); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .num-lab { font-family: var(--mono); font-size: 14px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+
+  .bar-url {
+    background: #fff; border: 2px solid var(--rule-strong); border-radius: 30px;
+    padding: 16px 28px; font-family: var(--mono); font-size: 26px; color: var(--muted);
+    display: flex; align-items: center; gap: 14px; max-width: 720px;
+  }
+  .caret { display: inline-block; width: 2px; height: 28px; background: var(--accent); }
+
+  .tomb {
+    background: #F0F1EE; border: 1px solid var(--rule-strong);
+    border-radius: 90px 90px 6px 6px; padding: 34px 20px 22px; text-align: center;
+    font-family: var(--serif); font-size: 21px; color: var(--dead); line-height: 1.25;
+    flex: 1; display: flex; align-items: center; justify-content: center;
+  }
+
+  .quote-bad { background: #F4F4F3; border-radius: 18px; padding: 22px 26px; font-size: 26px; color: var(--dead); font-style: italic; }
+  .quote-lg { background: var(--accent-soft); border-radius: 18px; padding: 26px 30px; font-family: var(--serif); font-size: 30px; color: var(--ink); line-height: 1.35; }
+  .err {
+    background: #FBF3F1; border-left: 4px solid #B2564A; padding: 18px 22px;
+    font-family: var(--mono); font-size: 16px; color: #8E4437; line-height: 1.5; white-space: pre-wrap;
+  }
+  .good {
+    background: var(--accent-soft); border-left: 4px solid var(--accent); padding: 18px 22px;
+    font-family: var(--mono); font-size: 16px; color: var(--accent); line-height: 1.5; white-space: pre-wrap;
+  }
+
+  .strike { text-decoration: line-through; text-decoration-color: #B2564A; text-decoration-thickness: 5px; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+  .col-h { font-family: var(--mono); font-size: 13px; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .listy { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 11px; }
+  .listy li { font-size: 23px; color: var(--ink); padding-left: 22px; position: relative; line-height: 1.3; }
+  .listy li::before { content: ""; position: absolute; left: 0; top: 12px; width: 9px; height: 9px; border: 1.5px solid var(--accent); border-radius: 50%; }
+  .listy.sm li { font-size: 19px; }
+
+  .files-big { border: 2px solid #B2564A; background: #FBF3F1; padding: 20px; font-family: var(--mono); font-size: 18px; color: #8E4437; height: 190px; display: flex; align-items: center; justify-content: center; text-align: center; }
+  .files-small { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; height: 190px; }
+  .files-small span { border: 1px solid var(--accent); background: var(--accent-soft); font-family: var(--mono); font-size: 13px; color: var(--accent); display: flex; align-items: center; justify-content: center; text-align: center; padding: 4px; }
+
+  @media print {
+    html, body { height: auto; overflow: visible; background: #fff; }
+    #viewport { position: static; display: block; }
+    #stage { transform: none !important; box-shadow: none; width: 100%; height: auto; }
+    .slide { display: flex !important; position: static; break-after: page; height: 720px; }
+    #kicker, #bar, #notes, #help, #over { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="viewport">
+  <div id="stage">
+
+    <!-- ============ M1 · COLD OPEN ============ -->
+
+    <section class="slide center" data-mod="M1 · Cold open" data-note="Marionette control bar, strings down to a phone. Name + handle bottom-right.">
+      <p class="eyebrow">One-day workshop · 09:00–16:00</p>
+      <h1 class="big xl">Agentic Engineering<br>for Mobile</h1>
+      <p class="sub">Stop prompting. Start engineering the harness.</p>
+      <div class="foot"><span>workshop_house_finder</span><span>Numbers on slides are measured, not estimated</span></div>
+    </section>
+
+    <section class="slide" data-mod="M1 · Cold open" data-note="Run both. Left picks the wrong state management, uses withOpacity, no test. Right reads conventions, edits, runs analyze, self-corrects, reports. Say nothing while it runs. Let them watch.">
+      <span class="badge demo">Demo — switch away from the deck</span>
+      <h2 class="big sm">Same model. Same task. Watch.</h2>
+      <div class="frame" style="margin-top:26px">
+        <span class="f-title">What to show</span>
+        <span class="f-what">Split screen, two terminals — left "no harness", right "harness".</span>
+        <span class="f-how">Task: "add a loading state to the profile screen." Run both, say nothing.</span>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M1 · Cold open" data-note="THE thesis of the day. A decent model with a great harness beats a great model with a poor one.">
+      <h2 class="big sm">That gap is not the model.</h2>
+      <p class="sub mono">same model · same prompt</p>
+    </section>
+
+    <section class="slide mid" data-mod="M1 · Cold open" data-note="Everyone in this room is standing on rung 1. By 16:00 you're on rung 4. Come back to this slide at the end.">
+      <h2 class="big sm">prompt → context → loop → harness</h2>
+      <div class="spine" style="margin-top:48px">
+        <div class="sp lit"><span class="s-n">01</span><span class="s-t">Prompt</span></div>
+        <div class="sp"><span class="s-n">02</span><span class="s-t">Context</span></div>
+        <div class="sp"><span class="s-n">03</span><span class="s-t">Loop</span></div>
+        <div class="sp"><span class="s-n">04</span><span class="s-t">Harness</span></div>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M1 · Cold open" data-note="Name collision confuses people every time. Kill it in the first ten minutes.">
+      <h2 class="big sm">Not building AI <em style="font-style:normal;color:var(--brass)">into</em> your app.</h2>
+      <div class="cards" style="margin-top:38px">
+        <div class="card no"><span class="mark x">✕</span><span class="c-t">AI features</span><span class="c-d">Genkit, Gemma, flutter_genui</span></div>
+        <div class="card yes"><span class="mark ok">✓</span><span class="c-t">AI that builds your app</span><span class="c-d">Engineer + agent + repo</span></div>
+      </div>
+    </section>
+
+    <!-- ============ M2 · WHAT AN AGENT IS ============ -->
+
+    <section class="slide center" data-mod="M2 · What an agent is" data-note="Section divider, 38 minutes.">
+      <p class="eyebrow">09:10 · 38 min</p>
+      <h2 class="big">1 · What is an agent?</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M2 · What an agent is" data-note="Most people think 'agent = smarter chatbot.' It's a chatbot in a while loop holding a shell.">
+      <h2 class="big sm">model + loop + tools + permissions</h2>
+      <div class="blocks" style="margin-top:44px">
+        <div class="blk"><span class="b-t">Model</span><span class="b-d">Decides what to do next.</span></div>
+        <div class="blk"><span class="b-t">Loop</span><span class="b-d">Repeats. That's the whole trick.</span></div>
+        <div class="blk"><span class="b-t">Tools</span><span class="b-d">Things it can actually do.</span></div>
+        <div class="blk"><span class="b-t">Permissions</span><span class="b-d">What it can do unsupervised.</span></div>
+      </div>
+    </section>
+
+    <section class="slide" data-mod="M2 · What an agent is" data-note="One small task. Narrate each turn out loud: read file → edit → run command → observe → decide → repeat → stop. Then open the transcript. This demystifies everything. Do not skip it, even if you're behind.">
+      <span class="badge demo">Demo — switch away from the deck</span>
+      <h2 class="big sm">Open the hood.</h2>
+      <div class="frame" style="margin-top:26px">
+        <span class="f-title">What to show</span>
+        <span class="f-what">A full-screen terminal running one small task.</span>
+        <span class="f-how">Narrate every turn. Then scroll back through the transcript.</span>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M2 · What an agent is" data-note="Foreshadow: that exit arrow is the hardest part. We'll come back to it at 14:35.">
+      <h2 class="big sm">think → act → observe → repeat → <em style="font-style:normal;color:var(--brass)">stop</em></h2>
+      <div class="rows" style="margin-top:38px">
+        <div class="row"><span class="r-k">think</span><span class="r-v">What should I do next?</span></div>
+        <div class="row"><span class="r-k">act</span><span class="r-v">Use a tool.</span></div>
+        <div class="row"><span class="r-k">observe</span><span class="r-v">Read what actually happened.</span></div>
+        <div class="row"><span class="r-k">repeat</span><span class="r-v">As many times as it needs.</span></div>
+        <div class="row" style="border-bottom:3px solid var(--brass)"><span class="r-k" style="color:var(--brass)">stop</span><span class="r-v">The hardest part.</span></div>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M2 · What an agent is" data-note="Everything in M4 and M5 is a consequence of this one slide.">
+      <h2 class="big sm">The context window is the whole game.</h2>
+      <div class="chips" style="margin-top:38px">
+        <span class="chip">system prompt</span><span class="chip">instruction files</span><span class="chip">tool defs</span><span class="chip">files read</span><span class="chip">conversation</span>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M2 · What an agent is" data-note="No tools = autocomplete.">
+      <h2 class="big sm">An agent is only as good as its hands.</h2>
+      <div class="chips" style="margin-top:40px">
+        <span class="chip">read file</span><span class="chip">edit</span><span class="chip">bash</span><span class="chip">search</span><span class="chip">web</span><span class="chip">MCP</span>
+      </div>
+      <p class="sub mono">no tools = autocomplete</p>
+    </section>
+
+    <section class="slide mid" data-mod="M2 · What an agent is" data-note="'Auto-accept everything' is how people lose a weekend. Tell a short real story if you have one.">
+      <h2 class="big sm">ask · allow · deny · auto</h2>
+      <table class="grid" style="margin-top:40px">
+        <tr><th>Mode</th><th>Flutter example</th></tr>
+        <tr><td class="k">ask</td><td><code>flutter run</code></td></tr>
+        <tr><td class="k">allow</td><td><code>flutter analyze</code></td></tr>
+        <tr><td class="k">deny</td><td><code>.env</code></td></tr>
+        <tr><td class="k">auto</td><td>format-on-save</td></tr>
+      </table>
+    </section>
+
+    <section class="slide mid" data-mod="M2 · What an agent is" data-note="Nobody in this room has used these. This is the highest-value new idea of the morning.">
+      <h2 class="big sm">A second brain that reports back.</h2>
+      <div class="blocks" style="margin-top:42px">
+        <div class="blk" style="flex:2"><span class="b-t">Main context</span><span class="b-d">Big window, nearly full.</span></div>
+        <div class="blk"><span class="b-t">Subagent</span><span class="b-d">Fills up separately, sends one line back.</span></div>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M2 · What an agent is" data-note="When to spawn.">
+      <h2 class="big xs">When to spawn</h2>
+      <table class="grid" style="margin-top:30px">
+        <tr><th>Situation</th><th>Why</th></tr>
+        <tr><td>Search would flood your context</td><td>Reading 30 files to answer 1 question</td></tr>
+        <tr><td>You want an independent opinion</td><td>A reviewer that never saw you write it</td></tr>
+        <tr><td>Tasks are genuinely independent</td><td>Parallel, no shared state</td></tr>
+      </table>
+    </section>
+
+    <section class="slide mid" data-mod="M2 · What an agent is" data-note="The one line they'll remember from this module.">
+      <h2 class="big sm">Delegate the reading.<br>Keep the deciding.</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M2 · What an agent is" data-note="Also: never when the task needs your conversation history. Subagents start blind.">
+      <h2 class="big sm">Don't spawn when the handoff costs more than the work.</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M2 · What an agent is" data-note="A reviewer with write access will 'helpfully' fix things. Give it eyes, not hands.">
+      <h2 class="big sm">Narrow job. Narrow tools.</h2>
+      <div class="rows" style="margin-top:36px">
+        <div class="row"><span class="r-k">description</span><span class="r-v">What it's for</span></div>
+        <div class="row"><span class="r-k">tool list</span><span class="r-v">What it can touch</span></div>
+        <div class="row"><span class="r-k">model</span><span class="r-v"><code>read-only</code> on a reviewer agent</span></div>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M2 · What an agent is" data-note="Say this plainly and without selling. It's the honest reason to reach for an outer-loop tool.">
+      <h2 class="big sm">Copilot: agent mode, chat modes.<br>No subagents. No hooks.</h2>
+      <table class="grid" style="margin-top:30px">
+        <tr><th>Feature</th><th>Copilot</th></tr>
+        <tr><td>Agent mode</td><td class="good">✓</td></tr>
+        <tr><td>Chat modes</td><td class="good">✓</td></tr>
+        <tr><td>Subagents</td><td class="bad">✕</td></tr>
+        <tr><td>Hooks</td><td class="bad">✕</td></tr>
+      </table>
+    </section>
+
+    <section class="slide mid" data-mod="M2 · What an agent is" data-note="Repeat this slide's line whenever someone asks 'which tool should I use.' Choosing per task is the skill.">
+      <h2 class="big sm">Copilot = inner loop.<br>Claude Code = outer loop.</h2>
+      <div class="cards" style="margin-top:36px">
+        <div class="card"><span class="c-lab">Inner</span><span class="c-t">Copilot</span><span class="c-d">Completion, inline edit, PR comments.</span></div>
+        <div class="card"><span class="c-lab">Outer</span><span class="c-t">Claude Code</span><span class="c-d">Plan, research, multi-file, loops, CI.</span></div>
+      </div>
+    </section>
+
+    <!-- ============ M3 · PROMPTING ============ -->
+
+    <section class="slide center" data-mod="M3 · Prompting" data-note="Say the quiet part: this gets seven minutes, and I'll tell you why.">
+      <p class="eyebrow">09:48 · 7 min</p>
+      <h2 class="big">2 · Prompting, briefly</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M3 · Prompting" data-note="Phrasing stopped being the bottleneck.">
+      <h2 class="big sm">Phrasing stopped being the bottleneck.</h2>
+      <p class="sub mono">time spent tuning wording ↓ since early 2026</p>
+    </section>
+
+    <section class="slide mid" data-mod="M3 · Prompting" data-note="What still matters.">
+      <h2 class="big sm">intent + constraints + acceptance criteria</h2>
+      <div class="blocks" style="margin-top:42px">
+        <div class="blk"><span class="b-t">Intent</span><span class="b-d">"add a loading state"</span></div>
+        <div class="blk"><span class="b-t">Constraints</span><span class="b-d">"use Provider, not setState"</span></div>
+        <div class="blk"><span class="b-t">Acceptance criteria</span><span class="b-d">"flutter analyze stays at 0 errors"</span></div>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M3 · Prompting" data-note="Kill this.">
+      <h2 class="big sm strike">"make it better"</h2>
+      <ul class="listy" style="margin-top:38px">
+        <li>Name the file</li>
+        <li>Name the pattern</li>
+        <li>Name the test</li>
+      </ul>
+    </section>
+
+    <section class="slide mid" data-mod="M3 · Prompting" data-note="This line sets up the entire rest of the day. Land it and pause.">
+      <h2 class="big sm">A prompt is a request.<br>A spec is a contract.</h2>
+    </section>
+
+    <!-- ============ M4 · CONTEXT ENGINEERING ============ -->
+
+    <section class="slide center" data-mod="M4 · Context engineering" data-note="Section divider, 35 minutes.">
+      <p class="eyebrow">09:55 · 35 min</p>
+      <h2 class="big">3 · Context engineering</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M4 · Context engineering" data-note="Show a real /context or equivalent. Real numbers beat a diagram.">
+      <h2 class="big sm">You are paying for all of this. Every turn.</h2>
+      <div class="chips" style="margin-top:38px">
+        <span class="chip">system prompt</span><span class="chip">instruction files</span><span class="chip">tool defs</span><span class="chip">files read</span><span class="chip">conversation</span>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M4 · Context engineering" data-note="Long sessions get dumber.">
+      <h2 class="big sm">Long sessions get dumber.</h2>
+      <p class="sub mono">context rot — quality declines over a long session</p>
+    </section>
+
+    <section class="slide mid" data-mod="M4 · Context engineering" data-note="This is why 'just correct it later in the chat' doesn't work. Restart instead.">
+      <h2 class="big sm">One wrong fact early ruins everything after it.</h2>
+      <p class="sub mono">poisoning — every descendant inherits the error</p>
+    </section>
+
+    <section class="slide mid" data-mod="M4 · Context engineering" data-note="Real number from our repo. That one file is 36% of the entire app.">
+      <h2 class="big sm">Your architecture is now a prompt.</h2>
+      <div class="cards" style="margin-top:36px">
+        <div class="card no"><span class="c-lab">Today</span><span class="c-t">home_screen.dart</span><span class="c-d">1,376 lines — 36% of the app</span></div>
+        <div class="card yes"><span class="c-lab">Target</span><span class="c-t">Feature folders</span><span class="c-d">None over 300 lines</span></div>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M4 · Context engineering" data-note="Juniors have been told 'clean architecture' for years and tuned it out. This is the version they'll act on — it costs them money and quality today.">
+      <h2 class="big sm">To change 5 lines it must read 1,376.</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M4 · Context engineering" data-note="An AGENTS.md on screen, ~40 lines, readable.">
+      <h2 class="big sm">Write down what you'd tell a new hire.</h2>
+      <div class="frame" style="margin-top:26px">
+        <span class="f-title">What to show</span>
+        <span class="f-what">AGENTS.md, ~40 lines, readable.</span>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M4 · Context engineering" data-note="Tell them to photograph it. They will anyway.">
+      <h2 class="big xs">Four places. Know which is which.</h2>
+      <table class="grid" style="margin-top:26px">
+        <tr><th>Scope</th><th>Claude Code</th><th>GitHub Copilot</th></tr>
+        <tr><td>Personal, all projects</td><td class="k">~/.claude/CLAUDE.md</td><td>Personal custom instructions</td></tr>
+        <tr><td>Project, committed</td><td class="k">CLAUDE.md / AGENTS.md</td><td class="k">.github/copilot-instructions.md</td></tr>
+        <tr><td>Path-scoped</td><td class="k">nested CLAUDE.md</td><td class="k">*.instructions.md + applyTo</td></tr>
+        <tr><td>Private, gitignored</td><td class="k">CLAUDE.local.md</td><td class="bad">no equivalent</td></tr>
+        <tr><td>Reusable workflow</td><td>skills / plugins</td><td class="k">.github/chatmodes</td></tr>
+      </table>
+    </section>
+
+    <section class="slide mid" data-mod="M4 · Context engineering" data-note="What goes where.">
+      <h2 class="big sm">Preference → personal.<br>Convention → project. Secrets → local.</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M4 · Context engineering" data-note="Long files aren't just ignored — they're billed every turn. Callback at M5.">
+      <h2 class="big sm">The 400-line CLAUDE.md nobody follows</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M4 · Context engineering" data-note="A rule the linter already enforces.">
+      <h2 class="big sm">Rules the linter already enforces</h2>
+      <p class="sub mono strike">"use single quotes"</p>
+    </section>
+
+    <section class="slide mid" data-mod="M4 · Context engineering" data-note="Straight from our repo. An aspirational rule teaches the agent that rules are optional.">
+      <h2 class="big sm">Rules your own code violates</h2>
+      <div class="err" style="margin-top:24px">docs/adr/0001 — "Provider everywhere"
+vs.
+home_screen.dart — full of setState</div>
+    </section>
+
+    <section class="slide center" data-mod="M4 · Context engineering" data-note="The test.">
+      <h2 class="big sm">Would a new hire follow this and pass review?</h2>
+    </section>
+
+    <!-- ============ LAB 1 ============ -->
+
+    <section class="slide center" data-mod="LAB 1" data-note="Break 10:30–10:45.">
+      <h2 class="big">☕ 15 minutes</h2>
+      <p class="sub mono">back at 10:45</p>
+    </section>
+
+    <section class="slide mid" data-mod="LAB 1" data-note="Runs on Copilot alone. No device needed. The before/after diff is the point — chase anyone who skips it.">
+      <span class="badge lab">Lab 1 · 30 minutes</span>
+      <h2 class="big xs">Configure the repo</h2>
+      <div class="steps" style="margin-top:26px">
+        <div class="step"><span class="st-n">Step 1</span><span class="st-t">AGENTS.md</span><span class="st-d">30–60 lines, no more.</span></div>
+        <div class="step"><span class="st-n">Step 2</span><span class="st-t">Path-scoped file</span><span class="st-d">One instruction file, scoped.</span></div>
+        <div class="step"><span class="st-n">Step 3</span><span class="st-t">Both formats</span><span class="st-d">Claude and Copilot.</span></div>
+        <div class="step"><span class="st-n">Step 4</span><span class="st-t">Diff it</span><span class="st-d">Same prompt, before and after.</span></div>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="LAB 1" data-note="Without rules the agent picks setState and a new folder name. With rules it picks Provider and follows structure. That contrast is the lab.">
+      <h2 class="big xs">Use this prompt for both runs</h2>
+      <div class="quote-lg" style="margin-top:30px">"Add a 'recently viewed' section to the Explore tab."</div>
+    </section>
+
+    <section class="slide center" data-mod="LAB 1" data-note="5 min. Apply the new-hire test to a file you didn't write.">
+      <h2 class="big sm">Swap. Read someone else's.</h2>
+    </section>
+
+    <!-- ============ M5 · COST, TOKENS & CONTEXT ============ -->
+
+    <section class="slide center" data-mod="M5 · Cost & tokens" data-note="Section divider, 15 minutes.">
+      <p class="eyebrow">11:15 · 15 min</p>
+      <h2 class="big">4 · What this costs</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M5 · Cost & tokens" data-note="Callback to slide 34. The 400-line CLAUDE.md isn't just ignored — you rent it by the turn.">
+      <h2 class="big sm">Your instruction file is billed on every single turn.</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M5 · Cost & tokens" data-note="Sets up the MCP module: enable per project, not globally.">
+      <h2 class="big sm">40 MCP tools = 40 tool defs, every turn.</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M5 · Cost & tokens" data-note="Practical advice: finish a task, then start fresh. Don't nurse one session all day.">
+      <h2 class="big sm">compaction · resumption</h2>
+      <p class="sub">Why sessions degrade — a long transcript folded into a short summary, then continuing.</p>
+    </section>
+
+    <section class="slide mid" data-mod="M5 · Cost & tokens" data-note="Model routing.">
+      <h2 class="big sm">Cheap model for mechanical.<br>Strong model for judgement.</h2>
+      <div class="cards" style="margin-top:32px">
+        <div class="card"><span class="c-lab">Cheap</span><span class="c-t">Mechanical</span><span class="c-d">Rename, format, boilerplate.</span></div>
+        <div class="card"><span class="c-lab">Strong</span><span class="c-t">Judgement</span><span class="c-d">Design, review, debug.</span></div>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M5 · Cost & tokens" data-note="This is the number to show your manager. Not 'tokens used.'">
+      <h2 class="big sm">Cost per PR</h2>
+      <p class="sub mono">trending down as the harness improves</p>
+    </section>
+
+    <!-- ============ M6 · MCP FOR MOBILE ============ -->
+
+    <section class="slide center" data-mod="M6 · MCP for mobile" data-note="Section divider, 30 minutes.">
+      <p class="eyebrow">11:30 · 30 min</p>
+      <h2 class="big">5 · Giving the agent hands</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M6 · MCP for mobile" data-note="One slide only — don't teach the protocol.">
+      <h2 class="big sm">A standard plug for tools.</h2>
+      <p class="sub mono">agent ⇄ MCP ⇄ tools</p>
+    </section>
+
+    <section class="slide mid" data-mod="M6 · MCP for mobile" data-note="Runtime errors + widget tree around the failing frame is the killer feature. We use it live at 14:35.">
+      <h2 class="big sm">Dart & Flutter MCP</h2>
+      <div class="chips" style="margin-top:36px">
+        <span class="chip">analyze</span><span class="chip">test</span><span class="chip hot">runtime errors</span><span class="chip hot">agentic hot reload</span>
+      </div>
+      <p class="sub mono">docs.flutter.dev/ai/mcp-server</p>
+    </section>
+
+    <section class="slide mid" data-mod="M6 · MCP for mobile" data-note="For the ~30% native folks. Name it, don't demo it.">
+      <h2 class="big sm">XcodeBuild MCP</h2>
+      <div class="chips" style="margin-top:36px"><span class="chip">build</span><span class="chip">simctl</span><span class="chip">run tests</span></div>
+    </section>
+
+    <section class="slide mid" data-mod="M6 · MCP for mobile" data-note="Android MCP.">
+      <h2 class="big sm">adb / Gradle MCP</h2>
+      <div class="chips" style="margin-top:36px"><span class="chip">install</span><span class="chip">logcat</span><span class="chip">instrumented tests</span></div>
+    </section>
+
+    <section class="slide mid" data-mod="M6 · MCP for mobile" data-note="Spend most of the module here. This is where the room leans forward.">
+      <h2 class="big sm">GitHub · Figma · Crashlytics</h2>
+      <div class="cards" style="margin-top:32px">
+        <div class="card"><span class="c-t">GitHub</span><span class="c-d">PRs, issues, CI.</span></div>
+        <div class="card"><span class="c-t">Figma</span><span class="c-d">Design → Flutter.</span></div>
+        <div class="card"><span class="c-t">Crashlytics</span><span class="c-d">Agent reads a real crash → proposes the fix.</span></div>
+      </div>
+    </section>
+
+    <section class="slide" data-mod="M6 · MCP for mobile" data-note="If Crashlytics MCP isn't wired up, skip and say so — do not fake it.">
+      <span class="badge demo">Demo — switch away from the deck</span>
+      <h2 class="big sm">Crash to fix</h2>
+      <div class="frame" style="margin-top:26px"><span class="f-title">What to show</span><span class="f-what">Live Crashlytics MCP session.</span></div>
+    </section>
+
+    <section class="slide mid" data-mod="M6 · MCP for mobile" data-note="Callback to slide 44. Every enabled server taxes every turn.">
+      <h2 class="big sm">Per project. Not globally.</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M6 · MCP for mobile" data-note="One line. Don't turn it into a security lecture — that's M9.">
+      <h2 class="big sm">An MCP server is a dependency you gave tool access.</h2>
+    </section>
+
+    <section class="slide center" data-mod="M6 · MCP for mobile" data-note="Lunch.">
+      <h2 class="big">🍽 See you at 13:00</h2>
+    </section>
+
+    <!-- ============ M7 · THE AGENTIC WORKFLOW ============ -->
+
+    <section class="slide center" data-mod="M7 · The workflow" data-note="This is the heart of the day. Three live demos. Protect the time.">
+      <p class="eyebrow">13:00 · 52 min</p>
+      <h2 class="big">6 · How work actually flows</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M7 · The workflow" data-note="Every stage produces a file, not a chat message. That's the whole idea.">
+      <h2 class="big xs">brainstorm → research → spec → plan → build → review</h2>
+      <div class="spine" style="margin-top:44px">
+        <div class="sp lit"><span class="s-n">01</span><span class="s-t" style="font-size:22px">brainstorm</span></div>
+        <div class="sp lit"><span class="s-n">02</span><span class="s-t" style="font-size:22px">research</span></div>
+        <div class="sp lit"><span class="s-n">03</span><span class="s-t" style="font-size:22px">spec</span></div>
+        <div class="sp lit"><span class="s-n">04</span><span class="s-t" style="font-size:22px">plan</span></div>
+        <div class="sp lit"><span class="s-n">05</span><span class="s-t" style="font-size:22px">build</span></div>
+        <div class="sp lit"><span class="s-n">06</span><span class="s-t" style="font-size:22px">review</span></div>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M7 · The workflow" data-note="Drift. No amount of prompt tuning fixes it. Only grounding does.">
+      <h2 class="big sm">Confident code that solves the wrong problem.</h2>
+    </section>
+
+    <section class="slide" data-mod="M7 · The workflow" data-note="Our real saved-searches request. Let it ask questions one at a time. Resist answering fast — let the room see it find the ambiguity. ~6 real decisions hide in that request.">
+      <span class="badge demo">Demo — switch away from the deck</span>
+      <h2 class="big sm">It interviews <em style="font-style:normal;color:var(--brass)">you</em></h2>
+      <div class="frame" style="margin-top:26px"><span class="f-title">Input</span><span class="f-what">docs/FEATURE_REQUEST.md</span></div>
+    </section>
+
+    <section class="slide mid" data-mod="M7 · The workflow" data-note="Ploy's request was three paragraphs. Nobody would have caught these in standup.">
+      <h2 class="big xs">Six decisions nobody had made.</h2>
+      <ul class="listy sm" style="margin-top:26px">
+        <li>Where stored</li>
+        <li>Push or in-app</li>
+        <li>What counts as "new"</li>
+        <li>Is analytics in scope</li>
+        <li>What happens when filters change shape</li>
+        <li>How many per user</li>
+      </ul>
+    </section>
+
+    <section class="slide" data-mod="M7 · The workflow" data-note="Output is a committed research doc. Good prompts: 'which storage approach fits this repo', 'how do other apps model saved searches.'">
+      <span class="badge demo">Demo — switch away from the deck</span>
+      <h2 class="big sm">Reads the code <em style="font-style:normal;color:var(--brass)">and</em> the web</h2>
+      <div class="frame" style="margin-top:26px"><span class="f-title">What to show</span><span class="f-what">Deep research producing a committed doc.</span></div>
+    </section>
+
+    <section class="slide mid" data-mod="M7 · The workflow" data-note="This is the answer to 'how do I keep my agent smart.' Not a magic memory feature. Committed files.">
+      <h2 class="big sm">The repo is the memory.</h2>
+      <p class="sub mono">docs/ → spec, ADR, plan → loops back into context next session</p>
+    </section>
+
+    <section class="slide mid" data-mod="M7 · The workflow" data-note="People conflate these constantly. Separating them is the insight.">
+      <h2 class="big sm">repo · session · durable</h2>
+      <div class="blocks" style="margin-top:40px">
+        <div class="blk"><span class="b-t">Repo</span><span class="b-d">ADRs, AGENTS.md — committed, reviewed.</span></div>
+        <div class="blk"><span class="b-t">Session</span><span class="b-d">Plan files, scratch.</span></div>
+        <div class="blk"><span class="b-t">Durable</span><span class="b-d">Skills, memory dirs.</span></div>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M7 · The workflow" data-note="Straight from our repo, and they'll have hit it during setup. The agent obeys the stale one confidently. Prune on a schedule.">
+      <h2 class="big sm">A wrong doc is worse than no doc.</h2>
+      <div class="err" style="margin-top:24px">README.md — "run build_runner"
+vs.
+docs/adr/0002 — "we removed build_runner"</div>
+    </section>
+
+    <section class="slide mid" data-mod="M7 · The workflow" data-note="Skills.">
+      <h2 class="big sm">A workflow you can hand to the agent.</h2>
+      <div class="chips" style="margin-top:36px"><span class="chip">brainstorm</span><span class="chip">plan</span><span class="chip">TDD</span><span class="chip">review</span></div>
+    </section>
+
+    <section class="slide mid" data-mod="M7 · The workflow" data-note="Show one firing. If short on time, this is the beat you drop.">
+      <h2 class="big sm">Starting a project becomes mechanical, not thoughtful.</h2>
+      <div class="cards" style="margin-top:32px">
+        <div class="card no"><span class="c-lab">Before</span><span class="c-t">Blank repo</span><span class="c-d">A person thinking hard.</span></div>
+        <div class="card yes"><span class="c-lab">After</span><span class="c-t">Skill fires</span><span class="c-d">Structure appears.</span></div>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M7 · The workflow" data-note="Under 'isolation': the searcher's 30 files never touch your window.">
+      <h2 class="big sm">parallelism · isolation · independence</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M7 · The workflow" data-note="Be honest. Two agents on one small task is slower than one.">
+      <h2 class="big sm">Coordination isn't free.</h2>
+      <p class="sub mono">speed vs. tokens + handoff overhead</p>
+    </section>
+
+    <section class="slide" data-mod="M7 · The workflow" data-note="Run them on the spec from slide 62.">
+      <span class="badge demo">Demo — switch away from the deck</span>
+      <h2 class="big sm">Three reviewers, three lenses</h2>
+      <div class="chips" style="margin-top:26px"><span class="chip">completeness</span><span class="chip">feasibility</span><span class="chip">ambiguity</span></div>
+    </section>
+
+    <section class="slide mid" data-mod="M7 · The workflow" data-note="Say this twice. Three agents with the same prompt just agree with each other. That's not review, it's an echo.">
+      <h2 class="big sm">Different lenses beat more reviewers.</h2>
+      <div class="cards" style="margin-top:32px">
+        <div class="card no"><span class="c-t">Same prompt ×3</span><span class="c-d">"Looks good." "Looks good." "Looks good."</span></div>
+        <div class="card yes"><span class="c-t">Different lenses ×3</span><span class="c-d">Each finds something different.</span></div>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M7 · The workflow" data-note="BA agent.">
+      <h2 class="big sm">One line in → requirements + acceptance criteria out</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M7 · The workflow" data-note="The highest-ROI slide of the day for this team. We have one test in the whole repo. This is how that changes.">
+      <h2 class="big sm">Acceptance criteria → test cases → failing tests</h2>
+      <div class="spine" style="margin-top:44px">
+        <div class="sp lit"><span class="s-n">01</span><span class="s-t" style="font-size:26px">criteria</span></div>
+        <div class="sp lit"><span class="s-n">02</span><span class="s-t" style="font-size:26px">test cases</span></div>
+        <div class="sp lit"><span class="s-n">03</span><span class="s-t" style="font-size:26px">failing tests</span></div>
+        <div class="sp lit"><span class="s-n">04</span><span class="s-t" style="font-size:26px;color:#B2564A">red 🔴</span></div>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M7 · The workflow" data-note="Pause here. Let them see that tests come before code, and that the agent wrote both.">
+      <h2 class="big sm">request → requirements → tests → code</h2>
+    </section>
+
+    <!-- ============ LAB 2 ============ -->
+
+    <section class="slide mid" data-mod="LAB 2" data-note="Copilot path: run the lenses sequentially as chat modes. Deliverable = a committed spec that survived review.">
+      <span class="badge lab">Lab 2 · 28 minutes</span>
+      <h2 class="big xs">Spec it, then attack it</h2>
+      <div class="steps" style="margin-top:26px">
+        <div class="step"><span class="st-n">Step 1</span><span class="st-t">Brainstorm</span><span class="st-d">docs/FEATURE_REQUEST.md</span></div>
+        <div class="step"><span class="st-n">Step 2</span><span class="st-t">Generate a spec</span><span class="st-d">Committed doc.</span></div>
+        <div class="step"><span class="st-n">Step 3</span><span class="st-t">Two reviewers</span><span class="st-d">Different lenses.</span></div>
+        <div class="step"><span class="st-n">Step 4</span><span class="st-t">Apply & commit</span><span class="st-d">Feedback applied.</span></div>
+      </div>
+    </section>
+
+    <section class="slide center" data-mod="LAB 2" data-note="Stragglers finish the lab during the break.">
+      <h2 class="big">☕ 15 minutes</h2>
+      <p class="sub mono">back at 14:35</p>
+    </section>
+
+    <!-- ============ M8 · VERIFY, LOOP, HARDEN ============ -->
+
+    <section class="slide center" data-mod="M8 · Verify, loop, harden" data-note="Section divider, 48 minutes.">
+      <p class="eyebrow">14:35 · 48 min</p>
+      <h2 class="big">7 · The part that's different on mobile</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M8 · Verify, loop, harden" data-note="The spine.">
+      <h2 class="big sm">Web verifies in 2 seconds.<br>Mobile boots a simulator.</h2>
+      <div class="cards" style="margin-top:32px">
+        <div class="card"><span class="c-t">Web</span><span class="c-d">Browser + DOM — 2s</span></div>
+        <div class="card"><span class="c-t">Mobile</span><span class="c-d">Build → install → boot → look — minutes</span></div>
+      </div>
+    </section>
+
+    <section class="slide center" data-mod="M8 · Verify, loop, harden" data-note="The single most important sentence of the day. Everything in this module hangs off it.">
+      <h2 class="big sm">Mobile's problem is the verifier, not the model.</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M8 · Verify, loop, harden" data-note="The cost ladder.">
+      <h2 class="big xs">Seven rungs. Know what each one costs.</h2>
+      <table class="grid" style="margin-top:22px">
+        <tr><th>Rung</th><th>Tool</th><th>Cost</th><th>Catches</th></tr>
+        <tr><td class="k">1</td><td>dart format</td><td>0.05s</td><td>style</td></tr>
+        <tr><td class="k">2</td><td>flutter analyze</td><td><b>1.6s</b></td><td>dead APIs, types</td></tr>
+        <tr><td class="k">3</td><td>unit tests</td><td>~2s</td><td>logic</td></tr>
+        <tr><td class="k">4</td><td>golden tests</td><td>~10s</td><td><b>layout</b></td></tr>
+        <tr><td class="k">5</td><td>widget / integration</td><td>~30s</td><td>behaviour</td></tr>
+        <tr><td class="k">6</td><td>build + install</td><td><b>163s</b></td><td>compile, platform</td></tr>
+        <tr><td class="k">7</td><td>drive the device</td><td>2–5 min</td><td>end to end</td></tr>
+      </table>
+    </section>
+
+    <section class="slide center" data-mod="M8 · Verify, loop, harden" data-note="Let this sit. Measured on the workshop repo this morning. An agent that runs a build to catch a typo just burned a hundred analyzer runs.">
+      <div class="num-big">102×</div>
+      <p class="sub mono">1.6s vs 163s — catches all 54 issues in our repo</p>
+    </section>
+
+    <section class="slide mid" data-mod="M8 · Verify, loop, harden" data-note="The rule.">
+      <h2 class="big sm">Never spend a rung you didn't need.</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M8 · Verify, loop, harden" data-note="The most underused Flutter tool in agentic work. An agent that can see a layout regression fixes it unprompted. We have zero of them.">
+      <h2 class="big sm">Golden tests are the agent's eyes.</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M8 · Verify, loop, harden" data-note="For the 30%. And note: a Gradle build is a 90-second verifier, so native teams push checks down the ladder even harder.">
+      <h2 class="big sm">goldens ↔ Paparazzi ↔ swift-snapshot-testing</h2>
+    </section>
+
+    <section class="slide" data-mod="M8 · Verify, loop, harden" data-note="Every featured card overflows, 124–281px, measured. Agent reads the runtime error via Dart MCP → fixes → hot reload → green. Fix is one word: Expanded. Recorded fallback ready; cut at 90 seconds.">
+      <span class="badge demo">Demo — switch away from the deck</span>
+      <h2 class="big sm">It can see now</h2>
+      <div class="err" style="margin-top:18px">RenderFlex overflowed by 124–281 PIXELS on the right.</div>
+    </section>
+
+    <section class="slide mid" data-mod="M8 · Verify, loop, harden" data-note="Design these, not the prompt. Callback to slide 9's exit arrow.">
+      <h2 class="big sm">trigger · topology · verifier · stop rule</h2>
+      <div class="blocks" style="margin-top:40px">
+        <div class="blk"><span class="b-t">Trigger</span></div>
+        <div class="blk"><span class="b-t">Topology</span></div>
+        <div class="blk"><span class="b-t">Verifier</span></div>
+        <div class="blk"><span class="b-t">Stop rule</span></div>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M8 · Verify, loop, harden" data-note="Copilot has no hooks — say it. Use pre-commit + CI there.">
+      <h2 class="big sm">hook · goal · cron · heartbeat</h2>
+      <table class="grid" style="margin-top:26px">
+        <tr><th>Loop</th><th>Flutter example</th></tr>
+        <tr><td class="k">hook</td><td>on-edit → format + analyze</td></tr>
+        <tr><td class="k">goal</td><td>"make flutter test green"</td></tr>
+        <tr><td class="k">cron</td><td>nightly QA agent</td></tr>
+        <tr><td class="k">heartbeat</td><td>CI watcher</td></tr>
+      </table>
+    </section>
+
+    <section class="slide mid" data-mod="M8 · Verify, loop, harden" data-note="Your own war story. Most credible slide in the module.">
+      <h2 class="big sm">It works while you sleep.</h2>
+      <div class="frame" style="margin-top:24px"><span class="f-title">What to show</span><span class="f-what">nightly_qa.sh + a regression report it filed.</span></div>
+    </section>
+
+    <section class="slide mid" data-mod="M8 · Verify, loop, harden" data-note="Our repo's flaky test fails 6 of 10 runs — measured. A goal loop will try this. Genuinely funny and genuinely scary.">
+      <h2 class="big sm">"Make the tests pass."<br>So it deleted the test.</h2>
+      <div class="err" style="margin-top:20px">- test('profile loading state shows spinner', ...);
+  ✓ CI green</div>
+    </section>
+
+    <section class="slide mid" data-mod="M8 · Verify, loop, harden" data-note="Stop rules.">
+      <h2 class="big sm">max iterations · no-progress detection · tamper guards</h2>
+      <p class="sub mono">test/ marked read-only</p>
+    </section>
+
+    <section class="slide center" data-mod="M8 · Verify, loop, harden" data-note="Loop economics.">
+      <h2 class="big sm">Budget iterations like money.</h2>
+      <p class="sub mono">10 iterations × 163s = 27 minutes of nothing</p>
+    </section>
+
+    <section class="slide mid" data-mod="M8 · Verify, loop, harden" data-note="They now recognise all six. Point back at where each was taught.">
+      <h2 class="big xs">instruction files · skills · hooks · subagents · MCP · permissions</h2>
+      <div class="chips" style="margin-top:32px">
+        <span class="chip">instruction files</span><span class="chip">skills</span><span class="chip">hooks</span><span class="chip">subagents</span><span class="chip">MCP</span><span class="chip">permissions</span>
+      </div>
+    </section>
+
+    <section class="slide center" data-mod="M8 · Verify, loop, harden" data-note="The idea that outlives this workshop. The harness only ever tightens.">
+      <h2 class="big sm">Every mistake gets engineered away. Permanently.</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M8 · Verify, loop, harden" data-note="The taxonomy, all from our repo.">
+      <h2 class="big xs">Failure → rule</h2>
+      <table class="grid" style="margin-top:22px">
+        <tr><th>Failure</th><th>Fix</th></tr>
+        <tr><td>withOpacity, WillPopScope (29 warnings)</td><td>analyzer rule + one line</td></tr>
+        <tr><td>Hallucinated pub package</td><td>only what's in pubspec; verify first</td></tr>
+        <tr><td>Picks setState in a Provider app</td><td>name the pattern explicitly</td></tr>
+        <tr><td>Hardcodes strings next to l10n</td><td>rule + grep hook</td></tr>
+        <tr><td>Touches .env / keystore</td><td><b>deny-list</b></td></tr>
+      </table>
+    </section>
+
+    <section class="slide mid" data-mod="M8 · Verify, loop, harden" data-note="Secrets get a lock, never a sign. Our repo has three real targets: .env, key.properties, google-services.json.">
+      <h2 class="big sm">Rules are advice.<br>Deny-lists are enforcement.</h2>
+      <div class="doors" style="margin-top:32px">
+        <div class="door"><span class="dr-t">Rule</span><span class="dr-d">"please don't"</span></div>
+        <div class="door open"><span class="dr-t">Deny-list</span><span class="dr-d">a locked door</span></div>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M8 · Verify, loop, harden" data-note="The emotional payoff of the day. It fails the same way for everyone — verified reproducible.">
+      <span class="badge lab">Exercise · 8 minutes</span>
+      <h2 class="big xs">Break it. Then make it unbreakable.</h2>
+      <div class="steps" style="margin-top:20px">
+        <div class="step"><span class="st-n">1</span><span class="st-t">Run seeded task</span><span class="st-d">Wrong state management.</span></div>
+        <div class="step"><span class="st-n">2</span><span class="st-t">Write the rule</span><span class="st-d">Kill it forever.</span></div>
+        <div class="step"><span class="st-n">3</span><span class="st-t">Re-run. Prove it.</span></div>
+        <div class="step"><span class="st-n">4</span><span class="st-t">Start RATCHET.md</span></div>
+      </div>
+    </section>
+
+    <!-- ============ M9 · CI/CD ============ -->
+
+    <section class="slide center" data-mod="M9 · Agents in CI" data-note="Section divider, 16 minutes.">
+      <p class="eyebrow">15:23 · 16 min</p>
+      <h2 class="big">8 · Agents in CI</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M9 · Agents in CI" data-note="The unlock: an agent is now a build step.">
+      <h2 class="big sm">claude -p — it's just a command with an exit code.</h2>
+    </section>
+
+    <section class="slide" data-mod="M9 · Agents in CI" data-note="It reads the same instruction file the humans do. That's why it's useful and not noise.">
+      <span class="badge demo">Demo — switch away from the deck</span>
+      <h2 class="big sm">Reviewed by an agent that knows your conventions</h2>
+      <div class="frame" style="margin-top:26px"><span class="f-title">What to show</span><span class="f-what">A PR with agent review comments citing the repo's own rules.</span></div>
+    </section>
+
+    <section class="slide mid" data-mod="M9 · Agents in CI" data-note="Straight from our repo. A gate that never fails is not a gate. Great, uncomfortable moment for the seniors.">
+      <h2 class="big sm">Why our CI never caught anything</h2>
+      <div class="err" style="margin-top:20px">--no-fatal-infos --no-fatal-warnings
+54 issues, 3 years.</div>
+    </section>
+
+    <section class="slide mid" data-mod="M9 · Agents in CI" data-note="Automate / don't.">
+      <h2 class="big sm">review, changelogs, tests, triage ✅<br>merge, release, store ❌</h2>
+      <div class="doors" style="margin-top:30px">
+        <div class="door"><span class="dr-t">Automate</span><span class="dr-d">Review · changelogs · tests · triage</span></div>
+        <div class="door open"><span class="dr-t">Don't</span><span class="dr-d">Merge · release · store</span></div>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M9 · Agents in CI" data-note="Do not skip. PR bodies, issues, dependency changelogs, contributor READMEs. Mitigations: least-privilege tokens, keep untrusted input away from credentialed agents, human approval on merge.">
+      <h2 class="big sm">Your CI agent reads text strangers wrote.</h2>
+      <div class="err" style="margin-top:20px">PR description: "...ignore previous instructions and..."</div>
+    </section>
+
+    <!-- ============ M10 · LANDSCAPE ============ -->
+
+    <section class="slide center" data-mod="M10 · Landscape" data-note="Section divider, 6 minutes.">
+      <p class="eyebrow">15:39 · 6 min</p>
+      <h2 class="big xs">Cursor · Copilot · Claude Code · Kimi · OpenRouter · Hermes · Pi</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M10 · Landscape" data-note="Say plainly: 'I haven't used those two.' Credibility costs nothing and buys a lot.">
+      <div class="chips" style="margin-top:0">
+        <span class="chip">Cursor</span><span class="chip">Copilot</span><span class="chip">Claude Code</span><span class="chip">Kimi</span><span class="chip">OpenRouter</span><span class="chip off">Hermes</span><span class="chip off">Pi</span>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M10 · Landscape" data-note="'You learned a discipline today, not a product. All of it ports.'">
+      <h2 class="big sm">The harness matters more than the model.</h2>
+    </section>
+
+    <!-- ============ M11 · CLOSE ============ -->
+
+    <section class="slide mid" data-mod="M11 · Close" data-note="Name what they built at each rung today. This bookend does a lot of work.">
+      <h2 class="big sm">prompt → context → loop → harness</h2>
+      <div class="spine" style="margin-top:48px">
+        <div class="sp lit"><span class="s-n">01</span><span class="s-t">Prompt</span></div>
+        <div class="sp lit"><span class="s-n">02</span><span class="s-t">Context</span></div>
+        <div class="sp lit"><span class="s-n">03</span><span class="s-t">Loop</span></div>
+        <div class="sp lit"><span class="s-n">04</span><span class="s-t">Harness</span></div>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="M11 · Close" data-note="Reading the diff.">
+      <h2 class="big sm">400 lines. Now what?</h2>
+      <ul class="listy sm" style="margin-top:26px">
+        <li>Cap the size in the request</li>
+        <li>"Explain this back to me"</li>
+        <li>Blast radius before correctness</li>
+        <li>Review the spec, not just the code</li>
+      </ul>
+    </section>
+
+    <section class="slide mid" data-mod="M11 · Close" data-note="For the juniors, and say it kindly: you must still learn rendering, async, isolates, platform behaviour. An engineer who can't judge is a bottleneck with extra steps.">
+      <h2 class="big sm">Your job is now to judge.</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M11 · Close" data-note="RATCHET.md is your metric. It should grow every week, then slow down.">
+      <h2 class="big sm">The harness lives in the repo.<br>Review it like code.</h2>
+    </section>
+
+    <section class="slide mid" data-mod="M11 · Close" data-note="Native folks: same skeleton, only the rungs change.">
+      <h2 class="big sm">Flutter · iOS · Android</h2>
+      <div class="chips" style="margin-top:36px"><span class="chip">Flutter</span><span class="chip">iOS</span><span class="chip">Android</span></div>
+      <p class="sub mono">same skeleton, only the rungs change</p>
+    </section>
+
+    <section class="slide mid" data-mod="M11 · Close" data-note="Nothing bigger. Three small things that actually happen beat a plan that doesn't.">
+      <h2 class="big xs">Three things. Tomorrow.</h2>
+      <div class="steps" style="margin-top:26px">
+        <div class="step"><span class="st-n">1</span><span class="st-t">Commit an AGENTS.md</span><span class="st-d">To your main repo.</span></div>
+        <div class="step"><span class="st-n">2</span><span class="st-t">Add a deny-list entry</span><span class="st-d">For your secrets.</span></div>
+        <div class="step"><span class="st-n">3</span><span class="st-t">Start RATCHET.md</span><span class="st-d">First entry by Friday.</span></div>
+      </div>
+    </section>
+
+    <section class="slide center" data-mod="M11 · Close" data-note="The closing image — the hand holding the marionette bar is clearly the engineer's.">
+      <h2 class="big">Stop prompting.<br>Start engineering the harness.</h2>
+      <div class="foot"><span>workshop_house_finder</span><span>Thank you</span></div>
+    </section>
+
+    <!-- ============ FACILITATOR NOTES ============ -->
+
+    <section class="slide center" data-mod="Facilitator notes" data-note="Reference only — not shown to attendees.">
+      <p class="eyebrow">Reference</p>
+      <h2 class="big xs">Facilitator notes</h2>
+    </section>
+
+    <section class="slide mid" data-mod="Facilitator notes" data-note="If running behind, drop in this order. Never drop: 8, 32, 82, 86, 97, 103.">
+      <h2 class="big xs">If you're running behind</h2>
+      <div class="two" style="margin-top:24px">
+        <div>
+          <p class="col-h">Drop, in order</p>
+          <ul class="listy sm">
+            <li>Superpowers demo — nice, not load-bearing</li>
+            <li>Loop economics — the 102× slide already made the point</li>
+            <li>Crashlytics demo — only if not wired up</li>
+            <li>Deep research demo — brainstorm carries the module alone</li>
+          </ul>
+        </div>
+        <div>
+          <p class="col-h">Never drop</p>
+          <ul class="listy sm">
+            <li>Raw agent loop</li>
+            <li>Hierarchy table</li>
+            <li>102× the number</li>
+            <li>Overflow demo</li>
+            <li>Ratchet exercise</li>
+            <li>Prompt injection</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="Facilitator notes" data-note="All live demos need a recorded fallback and a hard cut point.">
+      <h2 class="big xs">Live demos, in risk order</h2>
+      <table class="grid" style="margin-top:22px">
+        <tr><th>Demo</th><th>Risk</th></tr>
+        <tr><td>Overflow → MCP → hot reload</td><td>highest — device + network</td></tr>
+        <tr><td>Brainstorm / research / multi-agent</td><td>model latency, unpredictable output</td></tr>
+        <tr><td>PR review in Actions</td><td>needs a live repo + token</td></tr>
+        <tr><td>Raw agent loop</td><td>lowest — do it no matter what</td></tr>
+      </table>
+    </section>
+
+    <section class="slide mid" data-mod="Facilitator notes" data-note="Re-measure the morning of. On slides 29, 81, 82, 86, 90, 101.">
+      <h2 class="big xs">Numbers to re-measure, morning of</h2>
+      <div class="good" style="margin-top:22px">cd workshop_house_finder
+fvm flutter analyze                    # expect 0 errors / 54 issues
+time fvm flutter build apk --debug     # expect ~163s
+wc -l lib/screens/home/home_screen.dart # expect 1376</div>
+    </section>
+
+    <!-- ============ APPENDIX · FULL TOPIC INDEX ============ -->
+
+    <section class="slide center" data-mod="Appendix · Topic index" data-note="Master syllabus — full topic taxonomy for this workshop, cross-referenced against the deck above.">
+      <p class="eyebrow">Appendix</p>
+      <h2 class="big">Full topic index</h2>
+    </section>
+
+    <section class="slide mid" data-mod="Appendix · Topic index" data-note="Core Agent Concepts & Architectures.">
+      <h2 class="big xs">1 · Core Agent Concepts &amp; Architectures</h2>
+      <div class="two" style="margin-top:24px">
+        <ul class="listy sm">
+          <li>Prompt Engineering &amp; Few-Shot Examples</li>
+          <li>Context Windows, Token Economics &amp; Memory Compaction</li>
+          <li>Tool Use &amp; Model Context Protocol (MCP)</li>
+          <li>Skills &amp; Custom Script Integration (Shell/Python)</li>
+        </ul>
+        <ul class="listy sm">
+          <li>Agents, Subagents &amp; Multi-Agent Topologies</li>
+          <li>Plan Mode vs. Action Mode</li>
+          <li>Spec-First Architecture &amp; Interface Contracts</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="Appendix · Topic index" data-note="Tooling, Harnesses & Ecosystem.">
+      <h2 class="big xs">2 · Tooling, Harnesses &amp; Ecosystem</h2>
+      <div class="two" style="margin-top:24px">
+        <ul class="listy sm">
+          <li>Claude Code &amp; Terminal Agent Harnesses</li>
+          <li>Agentic IDEs vs. CLI Harnesses (Cursor/Windsurf vs. Claude Code/Hermes)</li>
+          <li>Hermes Agent &amp; Alternative Open Harnesses</li>
+        </ul>
+        <ul class="listy sm">
+          <li>Plugins &amp; Superpowers</li>
+          <li>Token Cost-Optimization &amp; Alternative Models (Codex, Kimi, DeepSeek)</li>
+          <li>Multi-Tier Model Strategy (smart model plans → cheap model implements)</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="slide mid" data-mod="Appendix · Topic index" data-note="Mobile Environment & Context Engineering.">
+      <h2 class="big xs">3 · Mobile Environment &amp; Context Engineering</h2>
+      <ul class="listy" style="margin-top:26px">
+        <li>Instruction Files (CLAUDE.md, AGENTS.md)</li>
+        <li>Context Hygiene &amp; Repository Filtering (.agentignore for Pods, DerivedData, build/)</li>
+        <li>Simulator &amp; Emulator Automation via MCP/CLI (xcrun simctl, adb, Logcat)</li>
+        <li>Figma-to-Code Pipelines (conceptual mention)</li>
+      </ul>
+    </section>
+
+    <section class="slide mid" data-mod="Appendix · Topic index" data-note="Autonomous Workflows & Execution Modes.">
+      <h2 class="big xs">4 · Autonomous Workflows &amp; Execution Modes</h2>
+      <ul class="listy" style="margin-top:26px">
+        <li>Research, ADR Generation &amp; Plan Formulation</li>
+        <li>Headless &amp; Non-Interactive Autonomous Runs</li>
+        <li>Multi-Agent Cross-Checking, Validation &amp; Verification</li>
+        <li>Persistent Memory Creation &amp; State Updates</li>
+        <li>Documentation, HTML &amp; Presentation Artifact Generation (Gemini Notebooks)</li>
+      </ul>
+    </section>
+
+    <section class="slide mid" data-mod="Appendix · Topic index" data-note="Professional Engineering & SDLC Integration.">
+      <h2 class="big xs">5 · Professional Engineering &amp; SDLC Integration</h2>
+      <ul class="listy" style="margin-top:26px">
+        <li>Git Worktrees for Parallel Branch Execution</li>
+        <li>Asynchronous Orchestrator Workflows (eliminating manual context switching)</li>
+        <li>Sandboxing, Security &amp; Permission Boundary Gates</li>
+        <li>Automated PR Reviews &amp; Code Quality Audits</li>
+        <li>Headless CI/CD Automation via GitHub Actions</li>
+      </ul>
+    </section>
+
+  </div>
+</div>
+
+<div id="kicker"><span id="k-mod"></span><span id="k-num"></span></div>
+<div id="bar"></div>
+<div id="notes"><span class="n-label">Speaker note — press S to hide</span><span id="n-text"></span></div>
+<div id="help">← → move · S notes · O overview · F full</div>
+
+<div id="over"><div id="over-grid"></div></div>
+
+<script>
+(function () {
+  var OFFSET = 0;
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var TOTAL = slides.length;
+  var stage = document.getElementById('stage');
+  var kMod = document.getElementById('k-mod'), kNum = document.getElementById('k-num');
+  var bar = document.getElementById('bar'), notes = document.getElementById('notes');
+  var nText = document.getElementById('n-text'), over = document.getElementById('over');
+  var grid = document.getElementById('over-grid');
+  var i = 0, showNotes = false;
+
+  function fit() {
+    var pad = 0.945;
+    var k = Math.min(window.innerWidth / 1280, window.innerHeight / 720) * pad;
+    stage.style.transform = 'scale(' + k + ')';
+  }
+
+  function render() {
+    slides.forEach(function (s, n) { s.classList.toggle('on', n === i); });
+    var s = slides[i];
+    kMod.innerHTML = '<b>' + (s.dataset.mod || '') + '</b>';
+    kNum.textContent = (i + 1 + OFFSET) + ' / ' + TOTAL;
+    bar.style.width = ((i + 1) / slides.length * 100) + '%';
+    nText.textContent = s.dataset.note || '(no note)';
+    if (location.hash !== '#' + (i + 1)) history.replaceState(null, '', '#' + (i + 1));
+  }
+
+  function go(n) { i = Math.max(0, Math.min(slides.length - 1, n)); render(); }
+
+  function buildOverview() {
+    slides.forEach(function (s, n) {
+      var b = document.createElement('button');
+      b.className = 'thumb';
+      var h = s.querySelector('.big');
+      b.innerHTML = '<span class="t-num">' + (n + 1 + OFFSET) + '</span>' +
+                    '<span class="t-txt">' + (h ? h.textContent.trim().slice(0, 74) : '—') + '</span>' +
+                    '<span class="t-mod">' + (s.dataset.mod || '') + '</span>';
+      b.addEventListener('click', function () { over.classList.remove('on'); go(n); });
+      grid.appendChild(b);
+    });
+  }
+
+  document.addEventListener('keydown', function (e) {
+    var k = e.key;
+    if (over.classList.contains('on')) {
+      if (k === 'Escape' || k === 'o' || k === 'O') { over.classList.remove('on'); e.preventDefault(); }
+      return;
+    }
+    if (k === 'ArrowRight' || k === ' ' || k === 'PageDown' || k === 'ArrowDown') { go(i + 1); e.preventDefault(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'ArrowUp') { go(i - 1); e.preventDefault(); }
+    else if (k === 'Home') { go(0); e.preventDefault(); }
+    else if (k === 'End') { go(slides.length - 1); e.preventDefault(); }
+    else if (k === 's' || k === 'S') { showNotes = !showNotes; notes.classList.toggle('on', showNotes); }
+    else if (k === 'o' || k === 'O') { over.classList.add('on'); e.preventDefault(); }
+    else if (k === 'f' || k === 'F') {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen();
+    }
+  });
+
+  document.getElementById('viewport').addEventListener('click', function (e) {
+    if (e.clientX > window.innerWidth * 0.5) go(i + 1); else go(i - 1);
+  });
+
+  window.addEventListener('resize', fit);
+  buildOverview();
+  var start = parseInt((location.hash || '').slice(1), 10);
+  if (start > 0 && start <= slides.length) i = start - 1;
+  fit(); render();
+})();
+</script>
+</body>
+</html>
